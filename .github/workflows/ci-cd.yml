@@ -39,5 +39,5 @@ jobs:
     # Deploy to Render (or AWS, depending on your choice)
     - name: Deploy to Render
       run: |
-        curl -fsSL https://render.com/deploy/scripts/automatic-deploy.sh | bash
+        curl -fsSL hhttps://api.render.com/deploy/srv-d07l3qjuibrs73fjbp9g?key=VvceLVtH9MA | bash
         # Or add your custom deployment script if using AWS, Render, etc.
