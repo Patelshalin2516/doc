@@ -1,0 +1,43 @@
+name: Docker CI/CD
+
+on:
+  push:
+    branches:
+      - main  # Trigger action only when code is pushed to the main branch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest  # Run the build on the latest Ubuntu runner
+
+    steps:
+    # Checkout the repository
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    # Set up Docker Buildx
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    # Cache Docker layers to speed up builds
+    - name: Cache Docker layers
+      uses: actions/cache@v2
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-buildx-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-buildx-
+
+    # Build and push Docker image
+    - name: Build and push Docker image to Docker Hub
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        file: Dockerfile
+        push: true  # Push the image to Docker Hub
+        tags: ${{ secrets.DOCKER_USERNAME }}/task-tracker-app:latest
+
+    # Deploy to Render (or AWS, depending on your choice)
+    - name: Deploy to Render
+      run: |
+        curl -fsSL https://render.com/deploy/scripts/automatic-deploy.sh | bash
+        # Or add your custom deployment script if using AWS, Render, etc.
