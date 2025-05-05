@@ -2,11 +2,9 @@ name: CI Pipeline
 
 on:
   push:
-    branches:
-      - main  # Trigger the pipeline when changes are pushed to the 'main' branch
+    branches: [main]
   pull_request:
-    branches:
-      - main  # Trigger the pipeline on pull requests targeting 'main'
+    branches: [main]
 
 jobs:
   build:
@@ -14,7 +12,27 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run basic tests
+        run: |
+          streamlit --version
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -25,26 +43,15 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build Docker image
+      - name: Build and Push Docker image
         run: |
-          docker build -t your_dockerhub_username/streamlit-app:latest .
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/streamlit-app:latest .
+          docker push ${{ secrets.DOCKER_USERNAME }}/streamlit-app:latest
 
-      - name: Push Docker image to Docker Hub
+      - name: Trigger Render Deployment
         run: |
-          docker push your_dockerhub_username/streamlit-app:latest
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build  # This job will run only after the 'build' job completes successfully
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Deploy to Render
-        run: |
-          # Example deploy command for Render API or CLI
           curl -X POST \
             -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
-            -d '{"serviceId": "your-service-id"}' \
-            https://api.render.com/v1/services/deploy
+            -H "Content-Type: application/json" \
+            -d '{}' \
+            https://api.render.com/v1/services/YOUR_RENDER_SERVICE_ID/deploys
